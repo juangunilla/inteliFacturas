@@ -7,7 +7,7 @@ import storage
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 r = redis.Redis(host=REDIS_HOST, decode_responses=False)
 
-# OCR actualizado (sin angle_cls, sin cls=True)
+# OCR actualizado
 ocr = PaddleOCR(lang='es', use_textline_orientation=True)
 
 def _iso_now():
@@ -15,9 +15,12 @@ def _iso_now():
 
 def run(path):
     out = []
-    for line in ocr.ocr(path):  
-        for _, tx in line:
-            out.append(tx[0])
+    res = ocr.ocr(path)
+    for line in res:
+        for item in line:
+            # item = [bbox, (text, score)]
+            text = item[1][0]
+            out.append(text)
     return out
 
 def extra(t):
@@ -55,60 +58,3 @@ def save_xlsx(d):
         wb = openpyxl.load_workbook(fn)
     else:
         wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Facturas"
-        ws.append(["Fecha","Tipo","Nro","Neto","NoGrav","IVA","Total","Loc","Nota"])
-
-    ws = wb["Facturas"]
-    ws.append([d["fecha"], d["tipo"], d["nro"], d["neto"], d["ng"], d["iva"], d["total"], d["loc"], d["nota"]])
-    wb.save(fn)
-
-def process_job(raw_payload):
-    payload = json.loads(raw_payload.decode("utf-8"))
-    file_id = payload["id"]
-
-    storage.upsert_record({"id": file_id, "status": "processing", "started_at": _iso_now()})
-    
-    try:
-        data = base64.b64decode(payload["data"])
-        ext = os.path.splitext(payload.get("filename",""))[1].lower()
-        if ext != ".pdf" and data.startswith(b"%PDF"): ext = ".pdf"
-        tmp_name = "source" + ext if ext else "source"
-
-        with tempfile.TemporaryDirectory() as tmp:
-            p = os.path.join(tmp, tmp_name)
-            open(p, "wb").write(data)
-
-            if ext == ".pdf":
-                pages = convert_from_path(p)
-                text = []
-                for i, page in enumerate(pages):
-                    img = os.path.join(tmp, f"p{i}.png")
-                    page.save(img, "PNG")
-                    text += run(img)
-            else:
-                text = run(p)
-
-        d = extra(text)
-        save_xlsx(d)
-
-        storage.upsert_record({
-            "id": file_id,
-            "status": "processed",
-            "processed_at": _iso_now(),
-            **d,
-            "error": None
-        })
-
-    except Exception as exc:
-        storage.upsert_record({
-            "id": file_id,
-            "status": "failed",
-            "processed_at": _iso_now(),
-            "error": str(exc)
-        })
-        print(f"Error procesando factura {file_id}: {exc}", flush=True)
-
-while True:
-    job = r.brpop("facturas")
-    process_job(job[1])
