@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Panel de Facturas</title>
+ <style>
+  :root{
+   --bg:#f4f7fb;
+   --primary:#3b82f6;
+   --primary-dark:#1d4ed8;
+   --danger:#dc2626;
+   --success:#16a34a;
+   --text:#1f2937;
+   --muted:#6b7280;
+   --border:#e5e7eb;
+   --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{
+   margin:0;
+   padding:32px 16px 64px;
+   font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+   background:var(--bg);
+   color:var(--text);
+  }
+  .container{
+   max-width:1200px;
+   margin:0 auto;
+  }
+  header{
+   display:flex;
+   flex-wrap:wrap;
+   justify-content:space-between;
+   align-items:flex-start;
+   gap:12px;
+   margin-bottom:32px;
+  }
+  header h1{
+   margin:0;
+   font-size:2rem;
+   font-weight:700;
+  }
+  header p{
+   margin:4px 0 0;
+   color:var(--muted);
+  }
+  .tagline{
+   max-width:520px;
+  }
+  .card{
+   background:var(--card);
+   border-radius:18px;
+   box-shadow:0 24px 60px rgba(15,23,42,0.08);
+   padding:24px;
+   margin-bottom:28px;
+  }
+  .upload-card{
+   display:grid;
+   gap:18px;
+  }
+  .actions{
+   display:flex;
+   flex-wrap:wrap;
+   gap:12px;
+   align-items:center;
+  }
+  .btn{
+   border:none;
+   border-radius:10px;
+   padding:12px 18px;
+   font-weight:600;
+   font-size:0.95rem;
+   cursor:pointer;
+   transition:transform 0.15s ease,box-shadow 0.15s ease,background 0.2s ease;
+   display:inline-flex;
+   align-items:center;
+   gap:8px;
+  }
+  .btn-primary{
+   background:var(--primary);
+   color:#fff;
+   box-shadow:0 12px 25px rgba(59,130,246,0.28);
+  }
+  .btn-primary:disabled{
+   cursor:not-allowed;
+   background:#93c5fd;
+   box-shadow:none;
+  }
+  .btn-secondary{
+   background:#e0e7ff;
+   color:#312e81;
+  }
+  .btn-ghost{
+   background:transparent;
+   color:var(--muted);
+  }
+  .btn:not(:disabled):hover{
+   transform:translateY(-1px);
+   box-shadow:0 10px 20px rgba(15,23,42,0.12);
+  }
+  .dropzone{
+   border:2px dashed #cbd5f5;
+   border-radius:16px;
+   padding:32px;
+   text-align:center;
+   display:flex;
+   flex-direction:column;
+   align-items:center;
+   gap:12px;
+   background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(255,255,255,0.9));
+   transition:border-color 0.2s ease;
+  }
+  .dropzone.dragover{
+   border-color:var(--primary);
+   background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(255,255,255,0.95));
+  }
+  .dropzone h2{
+   margin:0;
+   font-size:1.1rem;
+  }
+  .muted{
+   color:var(--muted);
+   font-size:0.95rem;
+  }
+  .file-list{
+   list-style:none;
+   padding:0;
+   margin:0;
+   display:flex;
+   flex-direction:column;
+   gap:8px;
+   max-height:150px;
+   overflow:auto;
+  }
+  .file-item{
+   display:flex;
+   justify-content:space-between;
+   align-items:center;
+   border-radius:12px;
+   padding:10px 14px;
+   background:#eef2ff;
+   color:#312e81;
+   font-size:0.92rem;
+  }
+  .file-item span{
+   overflow:hidden;
+   text-overflow:ellipsis;
+   white-space:nowrap;
+  }
+  .status-message{
+   border-radius:12px;
+   padding:14px 16px;
+   font-size:0.95rem;
+   display:none;
+  }
+  .status-message.show{display:block}
+  .status-success{
+   background:rgba(22,163,74,0.12);
+   color:var(--success);
+   border:1px solid rgba(22,163,74,0.25);
+  }
+  .status-error{
+   background:rgba(220,38,38,0.12);
+   color:var(--danger);
+   border:1px solid rgba(220,38,38,0.2);
+  }
+  .status-info{
+   background:rgba(59,130,246,0.12);
+   color:var(--primary-dark);
+   border:1px solid rgba(59,130,246,0.2);
+  }
+  .table-card{
+   padding:24px 24px 12px;
+  }
+  .table-head{
+   display:flex;
+   justify-content:space-between;
+   align-items:center;
+   gap:12px;
+   margin-bottom:16px;
+  }
+  .table-head h2{
+   margin:0;
+   font-size:1.25rem;
+  }
+  table{
+   width:100%;
+   border-collapse:collapse;
+   font-size:0.9rem;
+   min-width:720px;
+  }
+  thead tr{
+   background:#eef2ff;
+  }
+  th,td{
+   text-align:left;
+   padding:12px 14px;
+   border-bottom:1px solid var(--border);
+   vertical-align:middle;
+  }
+  tbody tr:hover{
+   background:#f8fafc;
+  }
+  .status-chip{
+   display:inline-flex;
+   align-items:center;
+   padding:4px 10px;
+   border-radius:999px;
+   font-size:0.78rem;
+   font-weight:600;
+   letter-spacing:0.03em;
+   text-transform:uppercase;
+  }
+  .status-queued{background:#fef3c7;color:#b45309}
+  .status-processing{background:#dbeafe;color:#1d4ed8}
+  .status-processed{background:#dcfce7;color:#0f766e}
+  .status-failed{background:#fee2e2;color:#b91c1c}
+  .table-btn{
+   padding:8px 12px;
+   border-radius:10px;
+   background:var(--primary);
+   color:#fff;
+   text-decoration:none;
+   font-weight:600;
+   display:inline-flex;
+   align-items:center;
+   gap:6px;
+  }
+  .table-btn:hover{
+   background:var(--primary-dark);
+  }
+  .empty{
+   text-align:center;
+   padding:26px 12px;
+   color:var(--muted);
+  }
+  .error-text{
+   color:var(--danger);
+   font-size:0.85rem;
+  }
+  @media (max-width:900px){
+   table{
+    min-width:600px;
+   }
+  }
+  @media (max-width:720px){
+   body{
+    padding:24px 12px 48px;
+   }
+   header{
+    flex-direction:column;
+   }
+   .card{
+    padding:20px;
+   }
+   .dropzone{
+    padding:24px;
+   }
+   .actions{
+    flex-direction:column;
+    align-items:stretch;
+   }
+   .btn{
+    justify-content:center;
+   }
+  }
+ </style>
+</head>
+<body>
+ <div class="container">
+  <header>
+   <div>
+    <h1>Panel de Facturas</h1>
+    <p class="tagline">Subí tus comprobantes, dejá que el OCR los procese y descargá cada archivo original cuando lo necesites.</p>
+   </div>
+   <div class="actions">
+    <button id="refresh-btn" class="btn btn-secondary" type="button">Actualizar listado</button>
+    <button id="excel-btn" class="btn btn-ghost" type="button">Descargar Excel</button>
+   </div>
+  </header>
+
+  <section class="card upload-card">
+   <div id="status-box" class="status-message"></div>
+   <div id="drop-zone" class="dropzone">
+    <h2>Arrastrá tus facturas</h2>
+    <p class="muted">Acepta PDF o imágenes. También podés seleccionar los archivos desde tu dispositivo.</p>
+    <button id="file-button" class="btn btn-secondary" type="button">Elegir archivos</button>
+    <input id="file-input" type="file" accept=".pdf,image/*" multiple hidden>
+   </div>
+   <ul id="file-list" class="file-list"></ul>
+   <div class="actions">
+    <button id="upload-btn" class="btn btn-primary" type="button" disabled>Enviar a procesamiento</button>
+    <span class="muted">Los archivos se colocan en la cola y el worker se encarga del OCR.</span>
+   </div>
+  </section>
+
+  <section class="card table-card">
+   <div class="table-head">
+    <h2>Comprobantes procesados</h2>
+    <span id="table-hint" class="muted"></span>
+   </div>
+   <div class="table-wrapper">
+    <table id="invoice-table">
+     <thead>
+      <tr>
+       <th>Estado</th>
+       <th>Recibido</th>
+       <th>Procesado</th>
+       <th>Fecha comprobante</th>
+       <th>Tipo</th>
+       <th>Número</th>
+       <th>Total</th>
+       <th>IVA</th>
+       <th>Localidad</th>
+       <th>Nota</th>
+       <th>Archivo</th>
+       <th>Acciones</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr><td class="empty" colspan="12">Cargando...</td></tr>
+     </tbody>
+    </table>
+   </div>
+  </section>
+ </div>
+
+ <script>
+ (()=>{
+  const state={files:[]};
+  const fileInput=document.getElementById("file-input");
+  const dropZone=document.getElementById("drop-zone");
+  const fileButton=document.getElementById("file-button");
+  const uploadBtn=document.getElementById("upload-btn");
+  const fileList=document.getElementById("file-list");
+  const statusBox=document.getElementById("status-box");
+  const tableBody=document.querySelector("#invoice-table tbody");
+  const refreshBtn=document.getElementById("refresh-btn");
+  const excelBtn=document.getElementById("excel-btn");
+  const tableHint=document.getElementById("table-hint");
+  let autoRefresh;
+
+  const statusLabels={
+   queued:"En cola",
+   processing:"Procesando",
+   processed:"Listo",
+   failed:"Error"
+  };
+
+  function escapeHtml(value){
+   return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+  }
+
+  function formatDateTime(value){
+   if(!value) return "—";
+   const date=new Date(value);
+   if(Number.isNaN(date.getTime())) return escapeHtml(value);
+   return date.toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"});
+  }
+
+  function formatField(value){
+   if(!value) return "—";
+   return escapeHtml(value);
+  }
+
+  function setStatus(message,type="info"){
+   statusBox.textContent=message;
+   statusBox.className=`status-message status-${type} show`;
+  }
+
+  function clearStatus(){
+   statusBox.textContent="";
+   statusBox.className="status-message";
+  }
+
+  function renderSelectedFiles(){
+   fileList.innerHTML="";
+   if(!state.files.length){
+    uploadBtn.disabled=true;
+    return;
+   }
+   for(const file of state.files){
+    const li=document.createElement("li");
+    li.className="file-item";
+    const name=document.createElement("span");
+    name.textContent=file.name;
+    const size=document.createElement("span");
+    size.textContent=`${(file.size/1024/1024).toFixed(2)} MB`;
+    li.append(name,size);
+    fileList.append(li);
+   }
+   uploadBtn.disabled=false;
+  }
+
+  function addFiles(files){
+   const unique=new Map(state.files.map(f=>[`${f.name}-${f.size}-${f.lastModified}`,f]));
+   Array.from(files).forEach(file=>{
+    unique.set(`${file.name}-${file.size}-${file.lastModified}`,file);
+   });
+   state.files=Array.from(unique.values());
+   renderSelectedFiles();
+  }
+
+  async function uploadFiles(){
+   if(!state.files.length) return;
+   uploadBtn.disabled=true;
+   setStatus("Subiendo archivos...","info");
+   const formData=new FormData();
+   state.files.forEach(file=>formData.append("files",file));
+   try{
+    const res=await fetch("/api/upload",{method:"POST",body:formData});
+    if(!res.ok) throw new Error(await res.text());
+    const data=await res.json();
+    setStatus(`Se enviaron ${data.queued} archivo(s) a la cola.`,"success");
+    state.files=[];
+    renderSelectedFiles();
+    fetchInvoices();
+   }catch(err){
+    console.error(err);
+    setStatus("No se pudo cargar los archivos. Intentá nuevamente.","error");
+   }finally{
+    uploadBtn.disabled=false;
+   }
+  }
+
+  async function fetchInvoices(){
+   tableHint.textContent="Actualizando...";
+   try{
+    const res=await fetch("/api/invoices");
+    if(!res.ok) throw new Error("No fue posible obtener los datos.");
+    const payload=await res.json();
+    const items=Array.isArray(payload.items)?payload.items:[];
+    renderTable(items);
+    if(items.length){
+     const processed=items.filter(item=>item.status==="processed").length;
+     tableHint.textContent=`${processed} completadas de ${items.length} en total.`;
+    }else{
+     tableHint.textContent="Aún no hay facturas procesadas.";
+    }
+   }catch(err){
+    console.error(err);
+    tableHint.textContent="No se pudo actualizar la tabla.";
+    tableBody.innerHTML=`<tr><td class="empty" colspan="12">Error al cargar los datos</td></tr>`;
+   }
+  }
+
+  function renderTable(items){
+   if(!items.length){
+    tableBody.innerHTML=`<tr><td class="empty" colspan="12">Subí tus facturas para verlas aquí.</td></tr>`;
+    return;
+   }
+   const rows=items.map(item=>{
+    const status=item.status||"queued";
+    const errorMsg=item.error?` title="${escapeHtml(item.error)}"`:"";
+    const download=(item.download_url && status==="processed")
+     ? `<a class="table-btn" href="${escapeHtml(item.download_url)}" download>Descargar</a>`:"—";
+    return `<tr>
+     <td><span class="status-chip status-${escapeHtml(status)}"${errorMsg}>${escapeHtml(statusLabels[status]||status)}</span></td>
+     <td>${formatDateTime(item.created_at)}</td>
+     <td>${formatDateTime(item.processed_at)}</td>
+     <td>${formatField(item.fecha)}</td>
+     <td>${formatField(item.tipo)}</td>
+     <td>${formatField(item.nro)}</td>
+     <td>${formatField(item.total)}</td>
+     <td>${formatField(item.iva)}</td>
+     <td>${formatField(item.loc)}</td>
+     <td>${formatField(item.nota)}</td>
+     <td>${formatField(item.filename||item.stored_name)}</td>
+     <td>${download}</td>
+    </tr>`;
+   }).join("");
+   tableBody.innerHTML=rows;
+  }
+
+  function handleDrop(event){
+   event.preventDefault();
+   dropZone.classList.remove("dragover");
+   const {files}=event.dataTransfer;
+   if(files && files.length){
+    addFiles(files);
+    clearStatus();
+   }
+  }
+
+  function resetAutoRefresh(){
+   if(autoRefresh) clearInterval(autoRefresh);
+   autoRefresh=setInterval(fetchInvoices,15000);
+  }
+
+  dropZone.addEventListener("dragover",event=>{
+   event.preventDefault();
+   dropZone.classList.add("dragover");
+  });
+  dropZone.addEventListener("dragleave",()=>dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop",handleDrop);
+  fileButton.addEventListener("click",()=>fileInput.click());
+  fileInput.addEventListener("change",event=>{
+   addFiles(event.target.files||[]);
+   fileInput.value="";
+   clearStatus();
+  });
+  uploadBtn.addEventListener("click",()=>{uploadFiles();});
+  refreshBtn.addEventListener("click",()=>{fetchInvoices();resetAutoRefresh();});
+  excelBtn.addEventListener("click",async()=>{
+   try{
+    const res=await fetch("/api/export/excel");
+    if(res.status===404){
+     setStatus("Todavía no hay un Excel generado.","info");
+     return;
+    }
+    if(!res.ok) throw new Error("No se pudo descargar el Excel.");
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download="facturas.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+   }catch(err){
+    console.error(err);
+    setStatus("Error al descargar el Excel.","error");
+   }
+  });
+
+  fetchInvoices();
+  resetAutoRefresh();
+ })();
+ </script>
+</body>
+</html>

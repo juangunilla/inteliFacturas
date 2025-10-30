@@ -1,0 +1,6 @@
+paddlepaddle
+paddleocr
+flask
+pdf2image
+openpyxl
+redis
